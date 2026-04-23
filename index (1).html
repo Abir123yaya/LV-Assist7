@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LV-Assist</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #EEF4FB; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: 'Plus Jakarta Sans', sans-serif; }
+    #lv-app {
+      background: #fff; border-radius: 16px; overflow: hidden;
+      width: 100%; max-width: 600px; height: 90vh; max-height: 700px;
+      display: flex; flex-direction: column;
+      box-shadow: 0 8px 40px rgba(21,101,192,0.12);
+    }
+    .lv-header {
+      background: linear-gradient(135deg, #1565C0 0%, #1976D2 60%, #2196F3 100%);
+      padding: 16px 20px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .lv-logo {
+      width: 38px; height: 38px; background: rgba(255,255,255,0.2);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 600; color: #fff; border: 1px solid rgba(255,255,255,0.3);
+    }
+    .lv-header-text { flex: 1; }
+    .lv-header-text h1 { font-size: 15px; font-weight: 600; color: #fff; }
+    .lv-header-text p { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 1px; }
+    .lv-status { display: flex; align-items: center; gap: 5px; font-size: 11px; color: rgba(255,255,255,0.85); }
+    .lv-dot { width: 7px; height: 7px; border-radius: 50%; background: #69F0AE; box-shadow: 0 0 0 2px rgba(105,240,174,0.3); }
+    .lv-messages {
+      flex: 1; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column; gap: 12px; background: #F8FAFE;
+    }
+    .lv-msg { display: flex; gap: 8px; align-items: flex-end; }
+    .lv-msg.user { flex-direction: row-reverse; }
+    .lv-avatar { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+    .bot-avatar { background: #1565C0; color: #fff; }
+    .user-avatar { background: #E3F2FD; color: #1565C0; }
+    .lv-bubble { max-width: 75%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    .bot-bubble { background: #fff; border: 1px solid #BBDEFB; color: #1a1a2e; border-bottom-left-radius: 4px; }
+    .user-bubble { background: #1565C0; color: #fff; border-bottom-right-radius: 4px; }
+    .error-bubble { background: #FFF3F3 !important; border-color: #FFCDD2 !important; color: #C62828 !important; }
+    .lv-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 10px; flex-shrink: 0; background: #F8FAFE; }
+    .lv-chip { background: #E3F2FD; color: #1565C0; border: 1px solid #BBDEFB; border-radius: 20px; font-size: 12px; padding: 6px 14px; cursor: pointer; transition: background 0.15s; font-family: inherit; }
+    .lv-chip:hover { background: #BBDEFB; }
+    .lv-input-row { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #E3F2FD; background: #fff; flex-shrink: 0; align-items: center; }
+    #lv-input { flex: 1; border: 1px solid #BBDEFB; border-radius: 24px; padding: 10px 18px; font-size: 14px; outline: none; font-family: inherit; color: #1a1a2e; background: #F8FAFE; transition: border-color 0.15s; }
+    #lv-input:focus { border-color: #1565C0; background: #fff; }
+    #lv-input::placeholder { color: #90A4AE; }
+    #lv-input:disabled { opacity: 0.6; }
+    #lv-send { width: 38px; height: 38px; border-radius: 50%; background: #1565C0; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.1s; flex-shrink: 0; }
+    #lv-send:hover { background: #0D47A1; }
+    #lv-send:active { transform: scale(0.95); }
+    #lv-send:disabled { background: #90A4AE; cursor: not-allowed; }
+    .typing-indicator { display: flex; gap: 4px; align-items: center; padding: 4px 2px; }
+    .typing-indicator span { width: 6px; height: 6px; border-radius: 50%; background: #90CAF9; animation: bounce 1.2s infinite; }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+    .lv-messages::-webkit-scrollbar { width: 4px; }
+    .lv-messages::-webkit-scrollbar-thumb { background: #BBDEFB; border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div id="lv-app">
+  <div class="lv-header">
+    <div class="lv-logo">LV</div>
+    <div class="lv-header-text">
+      <h1>LV-Assist</h1>
+      <p>Powered by AI</p>
+    </div>
+    <div class="lv-status"><div class="lv-dot"></div>Online</div>
+  </div>
+  <div class="lv-messages" id="lv-messages">
+    <div class="lv-msg">
+      <div class="lv-avatar bot-avatar">LV</div>
+      <div class="lv-bubble bot-bubble">Hi there! I'm LV-Assist, your school helper. Ask me anything — homework help, study tips, and more!</div>
+    </div>
+  </div>
+  <div class="lv-chips" id="lv-chips">
+    <button class="lv-chip" onclick="quickAsk('Give me study tips for exams')">Study tips</button>
+    <button class="lv-chip" onclick="quickAsk('Help me understand photosynthesis')">Homework help</button>
+    <button class="lv-chip" onclick="quickAsk('How do I manage my time as a student?')">Time management</button>
+    <button class="lv-chip" onclick="quickAsk('What clubs help with college applications?')">College tips</button>
+  </div>
+  <div class="lv-input-row">
+    <input id="lv-input" type="text" placeholder="Ask me anything..." />
+    <button id="lv-send" onclick="sendMessage()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+</div>
+<script>
+  const API_URL = '/api/chat';
+  let conversationHistory = [];
+  let isLoading = false;
+  const msgsEl = document.getElementById('lv-messages');
+  const inputEl = document.getElementById('lv-input');
+  const sendBtn = document.getElementById('lv-send');
+  const chipsEl = document.getElementById('lv-chips');
+
+  function addMsg(text, isUser, isError) {
+    const wrap = document.createElement('div');
+    wrap.className = 'lv-msg' + (isUser ? ' user' : '');
+    const avatar = document.createElement('div');
+    avatar.className = 'lv-avatar ' + (isUser ? 'user-avatar' : 'bot-avatar');
+    avatar.textContent = isUser ? 'You' : 'LV';
+    const bubble = document.createElement('div');
+    bubble.className = 'lv-bubble ' + (isUser ? 'user-bubble' : 'bot-bubble') + (isError ? ' error-bubble' : '');
+    bubble.textContent = text;
+    wrap.appendChild(avatar); wrap.appendChild(bubble);
+    msgsEl.appendChild(wrap); msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+
+  function showTyping() {
+    const wrap = document.createElement('div');
+    wrap.className = 'lv-msg'; wrap.id = 'typing-row';
+    const avatar = document.createElement('div');
+    avatar.className = 'lv-avatar bot-avatar'; avatar.textContent = 'LV';
+    const bubble = document.createElement('div');
+    bubble.className = 'lv-bubble bot-bubble';
+    bubble.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+    wrap.appendChild(avatar); wrap.appendChild(bubble);
+    msgsEl.appendChild(wrap); msgsEl.scrollTop = msgsEl.scrollHeight;
+    return wrap;
+  }
+
+  function setLoading(val) { isLoading = val; inputEl.disabled = val; sendBtn.disabled = val; }
+
+  async function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text || isLoading) return;
+    chipsEl.style.display = 'none';
+    addMsg(text, true);
+    inputEl.value = '';
+    setLoading(true);
+    conversationHistory.push({ role: 'user', content: text });
+    const typingRow = showTyping();
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: conversationHistory })
+      });
+      const data = await response.json();
+      typingRow.remove();
+      if (data.reply) {
+        conversationHistory.push({ role: 'assistant', content: data.reply });
+        addMsg(data.reply, false);
+      } else {
+        addMsg(data.error || 'Something went wrong.', false, true);
+        conversationHistory.pop();
+      }
+    } catch (err) {
+      typingRow.remove();
+      addMsg('Connection error. Please try again.', false, true);
+      conversationHistory.pop();
+    }
+    setLoading(false);
+    inputEl.focus();
+  }
+
+  function quickAsk(q) { inputEl.value = q; sendMessage(); }
+  inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+</script>
+</body>
+</html>
